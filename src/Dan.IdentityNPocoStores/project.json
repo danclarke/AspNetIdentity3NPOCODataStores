@@ -1,0 +1,15 @@
+﻿{
+  "version": "1.0.0-*",
+  "description": "NPOCO Stores for ASP.NET Identity",
+  "authors": [ "Dan Clarke 2015" ],
+  "tags": [ "" ],
+  "projectUrl": "",
+  "licenseUrl": "",
+  "frameworks": {
+    "dnx451": { }
+  },
+  "dependencies": {
+    "Microsoft.AspNet.Identity": "3.0.0-beta8",
+    "NPoco": "2.10.11"
+  }
+}
