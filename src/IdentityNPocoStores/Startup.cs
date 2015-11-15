@@ -44,7 +44,7 @@ namespace IdentityNPocoStores
         {
             // Add Identity services to the services container.
             services.AddIdentity<IdentityUser, IdentityRole>()
-                .AddNPocoStores<IdentityUser, IdentityRole>()
+                .AddNPocoStores<IdentityUser, IdentityRole>(Configuration["Data:DefaultConnection:ConnectionString"], Configuration["Data:DefaultConnection:ProviderName"])
                 .AddDefaultTokenProviders();
 
             // Add MVC services to the services container.
@@ -53,8 +53,6 @@ namespace IdentityNPocoStores
             // Register application services.
             services.AddTransient<IEmailSender, AuthMessageSender>();
             services.AddTransient<ISmsSender, AuthMessageSender>();
-
-            services.AddSingleton<IConfigurationRoot>(provider => Configuration);
         }
 
         // Configure is called after ConfigureServices is called.

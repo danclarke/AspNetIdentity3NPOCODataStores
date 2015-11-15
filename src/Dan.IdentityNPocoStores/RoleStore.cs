@@ -24,11 +24,22 @@ namespace Dan.IdentityNPocoStores
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="config">Configuration containing DB connection string</param>
-        public RoleStore(IConfigurationRoot config)
+        public RoleStore()
         {
-            _connectionString = config["Data:DefaultConnection:ConnectionString"];
-            _providerName = "System.Data.SqlClient";
+            _connectionString = AspConfig.GetConnectionString();
+            _providerName = AspConfig.GetProviderName();
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="config">Configuration containing DB connection details</param>
+        /// <param name="connectionStringKey">Config key for DB connection string</param>
+        /// <param name="providerNameKey">Config key for DB provider name</param>
+        public RoleStore(IConfiguration config, string connectionStringKey, string providerNameKey)
+        {
+            _connectionString = config[connectionStringKey];
+            _providerName = config[providerNameKey];
         }
 
         /// <summary>
@@ -55,17 +66,27 @@ namespace Dan.IdentityNPocoStores
             return IdentityResult.Success;
         }
 
-        public async Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken)
+        public Task<IdentityResult> UpdateAsync(TRole role, CancellationToken cancellationToken)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             if (role == null)
                 throw new ArgumentNullException(nameof(role));
 
-            using (var db = GetDatabase())
-                await db.UpdateAsync(role);
+            // Update concurrency stamp for optimistic concurrency
+            var originalStamp = role.ConcurrencyStamp;
+            role.ConcurrencyStamp = Guid.NewGuid().ToString();
 
-            return IdentityResult.Success;
+            int updateCount = 0;
+
+            using (var db = GetDatabase())
+                updateCount = db.UpdateWhere(role, "Id = @0 AND ConcurrencyStamp = @1", role.Id, originalStamp);
+
+            // If no updates, most likely a concurrency issue
+            if (updateCount == 0)
+                throw new IdentityConcurrencyException();
+
+            return Task.FromResult(IdentityResult.Success);
         }
 
         public async Task<IdentityResult> DeleteAsync(TRole role, CancellationToken cancellationToken)

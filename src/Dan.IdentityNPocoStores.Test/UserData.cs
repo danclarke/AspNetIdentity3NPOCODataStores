@@ -108,6 +108,42 @@ namespace Dan.IdentityNPocoStores.Test
         }
 
         /// <summary>
+        /// Change the concurrency stamp for a user for testing concurrency issues
+        /// </summary>
+        /// <param name="userId">ID of user to change stamp for</param>
+        public void ChangeConcurrencyStampForUser(string userId)
+        {
+            using (var conn = new SqlConnection(ConnectionString))
+            using (var cmd = new SqlCommand("UPDATE AspNetUsers SET ConcurrencyStamp = @Stamp WHERE Id = @Id", conn))
+            {
+                cmd.Parameters.AddWithValue("@Stamp", Guid.NewGuid().ToString());
+                cmd.Parameters.AddWithValue("@Id", userId);
+
+                conn.Open();
+                cmd.ExecuteNonQuery();
+                conn.Close();
+            }
+        }
+
+        /// <summary>
+        /// Change the concurrency stamp for a role for testing concurrency issues
+        /// </summary>
+        /// <param name="roleId">ID of role to change stamp for</param>
+        public void ChangeConcurrencyStampForRole(string roleId)
+        {
+            using (var conn = new SqlConnection(ConnectionString))
+            using (var cmd = new SqlCommand("UPDATE AspNetRoles SET ConcurrencyStamp = @Stamp WHERE Id = @Id", conn))
+            {
+                cmd.Parameters.AddWithValue("@Stamp", Guid.NewGuid().ToString());
+                cmd.Parameters.AddWithValue("@Id", roleId);
+
+                conn.Open();
+                cmd.ExecuteNonQuery();
+                conn.Close();
+            }
+        }
+
+        /// <summary>
         /// Get a specific UserLogin directly fromn the DB using ADO.NET rather than NPOCO.
         /// </summary>
         /// <param name="loginProvider">Login provider</param>

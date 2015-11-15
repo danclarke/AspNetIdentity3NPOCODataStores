@@ -38,16 +38,13 @@ Ran on:
 ## Current Limitations
 
 - You have to create the database schema yourself
-- Only MSSQL is supported right now
-- The path to the connection string within the config file is currently fixed
-- No concurrency protection - the latest save will always overwrite the last.
 
 ## Installation
 
 - Create a new ASP.NET 5 solution and link Dan.IdentityNPocoStores into your web project in your preferred manner.
 - If you don't already have a database with Identity set up, run the 'AspNetIdentity.sql' (Dan.IdentityNPocoStores.Test/Resources) script on your DB.
 - In Startup.cs remove all references to the EF Identity implementation
-- Replace the `.AddEntityFrameworkStores<ApplicationDbContext>()` line with `.AddNPocoStores<IdentityUser, IdentityRole>()` where 'IdentityUser' and 'IdentityRole' are your User & Role classes respectively
+- Replace the `.AddEntityFrameworkStores<ApplicationDbContext>()` line with `.AddNPocoStores<IdentityUser, IdentityRole>("connectionString", "providerName")` where 'IdentityUser' and 'IdentityRole' are your User & Role classes respectively
 - Ensure your custom User & Role classes inherit from IdentityUser and IdentityRole in the NPOCO project
 
 Look at the two web projects in the code to see a working implementation.

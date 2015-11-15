@@ -123,6 +123,19 @@ namespace Dan.IdentityNPocoStores.Test
         }
 
         [Fact]
+        public async Task UpdateAsync_ChecksConcurrency()
+        {
+            var store = _userData.GetUserStore();
+            var user = await store.FindByNameAsync(UserData.TestUserName, CancellationToken.None);
+
+            // Change stamp
+            _userData.ChangeConcurrencyStampForUser(user.Id);
+
+            // Try to update user
+            await Assert.ThrowsAsync<IdentityConcurrencyException>(async () => await store.UpdateAsync(user, CancellationToken.None));
+        }
+
+        [Fact]
         public async Task DeleteAsync_Deletes()
         {
             var store = _userData.GetUserStore();

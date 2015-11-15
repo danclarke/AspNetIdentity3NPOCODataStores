@@ -38,6 +38,7 @@ namespace Dan.IdentityNPocoStores
         where TUserLogin : UserLogin
         where TUserRole : UserRole
     {
+        // Cached per-type on purpose
         // ReSharper disable StaticMemberInGenericType
         // ReSharper disable InconsistentNaming
         private static readonly string _userTableName, _roleTableName, _userClaimTableName, _userLoginTableName, _userRoleTableName;
@@ -83,16 +84,27 @@ namespace Dan.IdentityNPocoStores
             _userClaimTableName = GetTableName<TUserClaim>();
             _userLoginTableName = GetTableName<TUserLogin>();
             _userRoleTableName = GetTableName<TUserRole>();
-        } 
+        }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="config">Configuration containing connection string for DB</param>
-        public UserStore(IConfigurationRoot config)
+        public UserStore()
         {
-            _connectionString = config["Data:DefaultConnection:ConnectionString"];
-            _providerName = "System.Data.SqlClient";
+            _connectionString = AspConfig.GetConnectionString();
+            _providerName = AspConfig.GetProviderName();
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="config">Configuration containing DB connection details</param>
+        /// <param name="connectionStringKey">Config key for DB connection string</param>
+        /// <param name="providerNameKey">Config key for DB provider name</param>
+        public UserStore(IConfiguration config, string connectionStringKey, string providerNameKey)
+        {
+            _connectionString = config[connectionStringKey];
+            _providerName = config[providerNameKey];
         }
 
         /// <summary>
@@ -173,25 +185,31 @@ namespace Dan.IdentityNPocoStores
             return IdentityResult.Success;
         }
 
-        public async Task<IdentityResult> UpdateAsync(TUser user, CancellationToken cancellationToken)
+        public Task<IdentityResult> UpdateAsync(TUser user, CancellationToken cancellationToken)
         {
-            // TODO: Support ConcurrencyStamp
-
             cancellationToken.ThrowIfCancellationRequested();
 
             if (user == null)
                 throw new ArgumentNullException(nameof(user));
 
-            using (var db = GetDatabase())
-                await db.UpdateAsync(user);
+            // Update concurrency stamp for future use
+            var originalStamp = user.ConcurrencyStamp;
+            user.ConcurrencyStamp = Guid.NewGuid().ToString();
 
-            return IdentityResult.Success;
+            int updateCount = 0;
+
+            using (var db = GetDatabase())
+                updateCount = db.UpdateWhere(user, "Id = @0 AND ConcurrencyStamp = @1", user.Id, originalStamp);
+
+            // Ensure user was updated, otherwise we had a concurrency issue
+            if (updateCount == 0)
+                throw new IdentityConcurrencyException();
+
+            return Task.FromResult(IdentityResult.Success);
         }
 
         public async Task<IdentityResult> DeleteAsync(TUser user, CancellationToken cancellationToken)
         {
-            // TODO: Support ConcurrencyStamp
-
             cancellationToken.ThrowIfCancellationRequested();
 
             if (user == null)

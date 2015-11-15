@@ -63,6 +63,19 @@ namespace Dan.IdentityNPocoStores.Test
         }
 
         [Fact]
+        public async Task UpdateAsync_ChecksConcurrency()
+        {
+            var store = _userData.GetRoleStore();
+            var role = await store.FindByNameAsync(UserData.TestRoleName, CancellationToken.None);
+
+            // Change stamp
+            _userData.ChangeConcurrencyStampForRole(role.Id);
+
+            // Try to update user
+            await Assert.ThrowsAsync<IdentityConcurrencyException>(async () => await store.UpdateAsync(role, CancellationToken.None));
+        }
+
+        [Fact]
         public async Task DeleteAsync_Deletes()
         {
             var store = _userData.GetRoleStore();
